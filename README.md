@@ -1,5 +1,11 @@
 # cuda_basic_poc
-A basic C++ example using the NVIDIA CUDA library for math, comparing CPU and GPU performance for the same tasks
+A basic C++ example using the NVIDIA CUDA library for math, comparing CPU and GPU performance for the same tasks.
+
+Setup on a system with an NVIDIA GPU. I am running WSL on Windows and installed CUDA with:
+
+```bash
+sudo apt-get install cuda
+```
 
 ## Vector Add
 
