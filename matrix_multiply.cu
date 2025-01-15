@@ -15,7 +15,7 @@ __global__ void matrixMultiply(float* result, const float* matrix1, const float*
     }
 }
 
-void gpu_matrix_multiply(int rows, int cols, float* matrix1, float* matrix2, float* result) {
+void gpu_matrix_multiply(int rows, int cols, float* matrix1, float* matrix2, float* result, int xNumThreads, int yNumThreads) {
     // Allocate device memory
     float* d_matrix1, *d_matrix2, *d_result;
     cudaMalloc((void**)&d_matrix1, rows * cols * sizeof(float));
@@ -27,7 +27,8 @@ void gpu_matrix_multiply(int rows, int cols, float* matrix1, float* matrix2, flo
     cudaMemcpy(d_matrix2, matrix2, rows * cols * sizeof(float), cudaMemcpyHostToDevice);
 
     // Define grid and block dimensions
-    dim3 blockDim(16, 16); // Adjust block size as needed
+    // dim3 blockDim(16, 16); // Adjust block size as needed
+    dim3 blockDim(xNumThreads, yNumThreads); // Adjust block size as needed
     dim3 gridDim((cols + blockDim.x - 1) / blockDim.x, (rows + blockDim.y - 1) / blockDim.y);
 
     // Launch the kernel
@@ -68,24 +69,27 @@ int main() {
         matrix2[i] = static_cast<float>(rand()) / RAND_MAX;
     }
 
-    auto gpu_start = std::chrono::high_resolution_clock::now();
-    gpu_matrix_multiply(rows, cols, matrix1, matrix2, result_gpu);
-    auto gpu_end = std::chrono::high_resolution_clock::now();
+    auto gpu_start16 = std::chrono::high_resolution_clock::now();
+    gpu_matrix_multiply(rows, cols, matrix1, matrix2, result_gpu, 16, 16);
+    auto gpu_end16 = std::chrono::high_resolution_clock::now();
+
+    auto gpu_start32 = std::chrono::high_resolution_clock::now();
+    gpu_matrix_multiply(rows, cols, matrix1, matrix2, result_gpu, 32, 32);
+    auto gpu_end32 = std::chrono::high_resolution_clock::now();
 
     auto cpu_start = std::chrono::high_resolution_clock::now();
     cpu_matrix_multiply(rows, cols, matrix1, matrix2, result_cpu);
     auto cpu_end = std::chrono::high_resolution_clock::now();
 
     // Calculate the execution time
-    auto gpu_duration = std::chrono::duration_cast<std::chrono::microseconds>(gpu_end - gpu_start);
+    auto gpu_duration16 = std::chrono::duration_cast<std::chrono::microseconds>(gpu_end16 - gpu_start16);
+    auto gpu_duration32 = std::chrono::duration_cast<std::chrono::microseconds>(gpu_end32 - gpu_start32);
     auto cpu_duration = std::chrono::duration_cast<std::chrono::microseconds>(cpu_end - cpu_start);
 
     // Print the execution time
-    std::cout << "GPU Execution time: " << gpu_duration.count() << " microseconds" << std::endl;
+    std::cout << "GPU Execution time 16 threads: " << gpu_duration16.count() << " microseconds" << std::endl;
+    std::cout << "GPU Execution time 32 threads: " << gpu_duration32.count() << " microseconds" << std::endl;
     std::cout << "CPU Execution time: " << cpu_duration.count() << " microseconds" << std::endl;
-
-    // Verify results (optional)
-    // ...
 
     delete[] matrix1;
     delete[] matrix2;
